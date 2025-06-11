@@ -1,6 +1,6 @@
 import os
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackContext
+from aiogram import Bot, Dispatcher, types
+from aiogram.utils import executor
 
 # Simple product catalog
 PRODUCTS = {
@@ -9,44 +9,45 @@ PRODUCTS = {
     3: {"name": "Product C", "price": 30},
 }
 
-def start(update: Update, context: CallbackContext) -> None:
-    update.message.reply_text(
+async def start_cmd(message: types.Message):
+    await message.answer(
         "Welcome to the Sales Bot! Use /products to see available items."
     )
 
-def list_products(update: Update, context: CallbackContext) -> None:
+async def list_products_cmd(message: types.Message):
     text = "Available products:\n"
     for pid, data in PRODUCTS.items():
         text += f"{pid}. {data['name']} - ${data['price']}\n"
     text += "\nUse /buy <id> to purchase."
-    update.message.reply_text(text)
+    await message.answer(text)
 
-def buy(update: Update, context: CallbackContext) -> None:
-    if len(context.args) != 1 or not context.args[0].isdigit():
-        update.message.reply_text("Usage: /buy <product_id>")
+async def buy_cmd(message: types.Message):
+    args = message.get_args()
+    if not args or not args.isdigit():
+        await message.answer("Usage: /buy <product_id>")
         return
-    pid = int(context.args[0])
+    pid = int(args)
     product = PRODUCTS.get(pid)
     if not product:
-        update.message.reply_text("Unknown product ID")
+        await message.answer("Unknown product ID")
         return
-    text = f"You purchased {product['name']} for ${product['price']}. Thank you!"
-    update.message.reply_text(text)
+    await message.answer(
+        f"You purchased {product['name']} for ${product['price']}. Thank you!"
+    )
 
 def main() -> None:
     token = os.environ.get("TELEGRAM_TOKEN")
     if not token:
         raise RuntimeError("TELEGRAM_TOKEN environment variable not set")
 
-    updater = Updater(token)
-    dp = updater.dispatcher
+    bot = Bot(token=token)
+    dp = Dispatcher(bot)
 
-    dp.add_handler(CommandHandler("start", start))
-    dp.add_handler(CommandHandler("products", list_products))
-    dp.add_handler(CommandHandler("buy", buy))
+    dp.register_message_handler(start_cmd, commands=["start"])
+    dp.register_message_handler(list_products_cmd, commands=["products"])
+    dp.register_message_handler(buy_cmd, commands=["buy"])
 
-    updater.start_polling()
-    updater.idle()
+    executor.start_polling(dp)
 
 if __name__ == "__main__":
     main()

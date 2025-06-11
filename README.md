@@ -1,6 +1,7 @@
 # Sales Telegram Bot
 
-This repository contains a simple Telegram bot written in Python for showcasing products and taking orders.
+This repository contains a simple Telegram bot written in Python using
+[`aiogram`](https://docs.aiogram.dev/) for showcasing products and taking orders.
 
 ## Setup
 1. Install dependencies:
